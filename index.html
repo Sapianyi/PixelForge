@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PixelForge // Media Pipeline</title>
+    <style>
+      /* --- CYBERPUNK CSS RESET & VARIABLES --- */
+      :root {
+        --bg-main: #0a0d12;
+        --bg-panel: #11151c;
+        --bg-input: #07090d;
+        --border-color: #262f3d;
+        --border-focus: #00f0ff;
+
+        --text-primary: #e2e8f0;
+        --text-muted: #6272a4;
+
+        --neon-cyan: #00f0ff;
+        --neon-green: #39ff14;
+        --neon-magenta: #ff007f;
+        --neon-amber: #ffb86c;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background-color: var(--bg-main);
+        color: var(--text-primary);
+        font-family: "Courier New", Courier, monospace;
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      /* --- LAYOUT STRUCTURE --- */
+      .docs-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: #8b949e;
+        text-decoration: none;
+        font-size: 13px;
+        font-family: monospace;
+        border: 1px solid #30363d;
+        margin-top: 20px;
+        padding: 6px 12px;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+      }
+
+      .docs-link:hover {
+        color: #39ff14; /* Твій фірмовий зелений неоновий колір */
+        border-color: #39ff14;
+        box-shadow: 0 0 8px rgba(57, 255, 20, 0.2);
+      }
+
+      .docs-link .icon {
+        transition: transform 0.2s ease;
+      }
+
+      .docs-link:hover .icon {
+        transform: scale(1.1);
+      }
+      .sidebar {
+        width: 260px;
+        background-color: var(--bg-panel);
+        border-right: 2px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        justify-content: space-between;
+      }
+
+      .main-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow-y: auto;
+        background: linear-gradient(180deg, #0a0d12 0%, #0e131b 100%);
+      }
+
+      /* --- HEADER & STATUS BAR --- */
+      header {
+        padding: 20px 40px;
+        background-color: rgba(17, 21, 28, 0.8);
+        border-bottom: 1px solid var(--border-color);
+        backdrop-filter: blur(8px);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+
+      .logo {
+        font-weight: bold;
+        font-size: 1.3rem;
+        letter-spacing: 2px;
+        color: var(--neon-cyan);
+        text-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+      }
+
+      .system-stats {
+        display: flex;
+        gap: 20px;
+        font-size: 0.85rem;
+      }
+
+      .stat-badge {
+        padding: 4px 10px;
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+      }
+
+      #status {
+        color: var(--neon-amber);
+        text-shadow: 0 0 5px rgba(255, 184, 108, 0.2);
+      }
+
+      /* --- WORKSPACE CONTAINER --- */
+      .workspace {
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        gap: 40px;
+        max-width: 1400px;
+        width: 100%;
+        margin: 0 auto;
+      }
+
+      section {
+        background-color: var(--bg-panel);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 25px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      section::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: var(--neon-cyan);
+      }
+
+      section.module-export::before {
+        background: var(--neon-green);
+      }
+      section.module-packer::before {
+        background: var(--neon-magenta);
+      }
+      section.module-font::before {
+        background: var(--neon-amber);
+      }
+
+      h2 {
+        font-size: 1.1rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      /* --- CONTROLS & TOOLBARS --- */
+      .toolbar {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        align-items: center;
+        background: var(--bg-input);
+        padding: 15px;
+        border-radius: 6px;
+        border: 1px solid var(--border-color);
+        margin-bottom: 20px;
+      }
+
+      .control-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      /* --- FORM ELEMENTS --- */
+      button {
+        background: transparent;
+        color: var(--text-primary);
+        border: 1px solid var(--neon-cyan);
+        padding: 8px 18px;
+        cursor: pointer;
+        font-family: monospace;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 1px;
+        transition: all 0.2s ease;
+        border-radius: 4px;
+      }
+
+      button:hover {
+        background: rgba(0, 240, 255, 0.1);
+        box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+        color: #fff;
+      }
+
+      section.module-export button {
+        border-color: var(--neon-green);
+      }
+      section.module-export button:hover {
+        background: rgba(57, 255, 20, 0.1);
+        box-shadow: 0 0 10px rgba(57, 255, 20, 0.2);
+      }
+
+      section.module-packer button {
+        border-color: var(--neon-magenta);
+      }
+      section.module-packer button:hover {
+        background: rgba(255, 0, 127, 0.1);
+        box-shadow: 0 0 10px rgba(255, 0, 127, 0.2);
+      }
+
+      input[type="number"],
+      select {
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        padding: 6px 10px;
+        font-family: monospace;
+        border-radius: 4px;
+        outline: none;
+      }
+
+      input[type="number"]:focus,
+      select:focus {
+        border-color: var(--border-focus);
+      }
+
+      input[type="file"] {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+      }
+
+      input[type="file"]::-webkit-file-upload-button {
+        background: var(--bg-panel);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        padding: 6px 12px;
+        cursor: pointer;
+        font-family: monospace;
+        margin-right: 10px;
+        border-radius: 4px;
+      }
+
+      /* --- VISUAL INTERFACE (CANVAS & PANELS) --- */
+      .canvas-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 25px;
+      }
+
+      .canvas-card {
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .canvas-card h3 {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+      }
+
+      .canvas-wrapper {
+        background: #000;
+        border: 1px solid rgba(38, 47, 61, 0.5);
+        border-radius: 4px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 200px;
+        overflow: auto;
+      }
+
+      canvas {
+        max-width: 100%;
+        image-rendering: pixelated; /* Тримаємо чіткі межі retro пікселів */
+      }
+
+      textarea {
+        width: 100%;
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        font-family: "Consolas", monospace;
+        padding: 15px;
+        border-radius: 6px;
+        box-sizing: border-box;
+        outline: none;
+        resize: vertical;
+      }
+
+      textarea:focus {
+        border-color: var(--border-focus);
+      }
+
+      /* Ефект затягування файлу для кіберпанк-інтерфейсу */
+      .drag-over {
+        border: 2px dashed var(--neon-magenta) !important;
+        background: rgba(255, 0, 127, 0.05) !important;
+        box-shadow: 0 0 15px rgba(255, 0, 127, 0.2);
+        transition: all 0.2s ease;
+      }
+
+      /* --- SIDEBAR COMPONENTS --- */
+      .nav-list {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 30px;
+      }
+
+      .nav-item a {
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 0.85rem;
+        display: block;
+        padding: 10px;
+        border-radius: 4px;
+        border: 1px solid transparent;
+      }
+
+      .nav-item a:hover {
+        color: var(--neon-cyan);
+        background: rgba(0, 240, 255, 0.05);
+        border-color: rgba(0, 240, 255, 0.1);
+      }
+
+      .credits {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        line-height: 1.4;
+      }
+    </style>
+    <script type="module" crossorigin src="/assets/index-B8exxrC2.js"></script>
+  </head>
+  <body>
+    <!-- SIDEBAR NAVIGATION -->
+    <div class="sidebar">
+      <div>
+        <div class="logo">// PIXELFORGE</div>
+        <div class="header-controls">
+          <a href="/docs.html" target="_blank" class="docs-link">
+            <svg class="icon" viewBox="0 0 16 16" width="14" height="14">
+              <path
+                fill="currentColor"
+                d="M3 1.75A.75.75 0 0 1 3.75 1h8.5a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-8.5a.75.75 0 0 1-.75-.75Zm1.5.75v11h7.5V2.5Zm1.75 2h4a.75.75 0 0 1 0 1.5h-4a.75.75 0 0 1 0-1.5Zm0 3.5h4a.75.75 0 0 1 0 1.5h-4a.75.75 0 0 1 0-1.5Z"
+              />
+            </svg>
+            Architecture Docs
+          </a>
+        </div>
+        <ul class="nav-list">
+          <li class="nav-item"><a href="#raster">_01_ RASTER & PALETTE</a></li>
+          <li class="nav-item"><a href="#exporter">_02_ CODE EXPORTER</a></li>
+          <li class="nav-item"><a href="#packer">_03_ SPRITE PACKER</a></li>
+          <li class="nav-item"><a href="#fonts">_04_ LOW-RES FONTS</a></li>
+          <li class="nav-item"><a href="#devops">_05_ DEVOPS PIPELINE</a></li>
+        </ul>
+      </div>
+      <div class="credits">
+        Local Buffer: 100% Client-Side<br />
+        History Store: IndexedDB
+      </div>
+    </div>
+
+    <!-- MAIN DISPLAY CONTENT -->
+    <div class="main-content">
+      <header>
+        <div>Console Pipeline Engine</div>
+        <div class="system-stats">
+          <progress
+            id="progressBar"
+            value="0"
+            max="100"
+            style="
+              display: none;
+              width: 150px;
+              height: 16px;
+              accent-color: var(--neon-magenta);
+              vertical-align: middle;
+            "
+          ></progress>
+
+          <div class="stat-badge">
+            RAM Indicator:
+            <span style="color: var(--neon-green)">Local Static</span>
+          </div>
+          <div class="stat-badge">Status: <span id="status">Active</span></div>
+        </div>
+      </header>
+
+      <div class="workspace">
+        <!-- MODULE 1: RASTER -->
+        <section id="raster">
+          <h2>_01_ Raster & Palette Optimization</h2>
+          <div class="toolbar">
+            <input
+              type="file"
+              id="upload"
+              accept="image/png, image/jpeg, image/bmp, image/svg+xml"
+            />
+
+            <div
+              class="control-group"
+              style="
+                border-left: 1px solid var(--border-color);
+                padding-left: 15px;
+              "
+            >
+              <input
+                type="number"
+                id="resizeW"
+                placeholder="W"
+                style="width: 70px"
+              />
+              <span style="color: var(--text-muted)">x</span>
+              <input
+                type="number"
+                id="resizeH"
+                placeholder="H"
+                style="width: 70px"
+              />
+              <!-- AI Color Boost Блок -->
+              <div class="control-group" style="padding-right: 15px">
+                <button
+                  id="aiBoostBtn"
+                  style="
+                    border-color: var(--neon-cyan);
+                    color: var(--neon-cyan);
+                  "
+                >
+                  Hardware Color Boost
+                </button>
+              </div>
+              <select id="resizeMode">
+                <option value="smooth">Smooth (Lanczos3)</option>
+                <option value="nearest">Nearest Neighbor</option>
+              </select>
+              <button id="resizeBtn">Resize</button>
+            </div>
+
+            <div
+              class="control-group"
+              style="
+                border-left: 1px solid var(--border-color);
+                padding-left: 15px;
+              "
+            >
+              <label
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 5px;
+                  font-size: 0.85rem;
+                "
+              >
+                <input type="checkbox" id="dither" checked /> Floyd-Steinberg
+              </label>
+              <button id="processBtn">Quantize (Worker)</button>
+            </div>
+          </div>
+
+          <div class="canvas-grid">
+            <div class="canvas-card">
+              <h3>Source Texture Buffer</h3>
+              <div class="canvas-wrapper">
+                <canvas id="sourceCanvas"></canvas>
+              </div>
+            </div>
+            <div class="canvas-card">
+              <h3>Output (Garmin MIP 16-Color)</h3>
+              <div class="canvas-wrapper">
+                <canvas id="outputCanvas"></canvas>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- MODULE 2: CODE EXPORTER -->
+        <section id="exporter" class="module-export">
+          <h2>_02_ Asset-to-Code Exporter</h2>
+          <div class="toolbar">
+            <div class="control-group">
+              <span style="font-size: 0.85rem; color: var(--text-muted)"
+                >Export Format:</span
+              >
+              <select id="exportBitDepth">
+                <option value="4bit" selected>4-bit Packed (16 Colors)</option>
+                <option value="1bit">1-bit Monochrome (OLED SSD1306)</option>
+              </select>
+            </div>
+            <button id="exportCBtn">
+              Generate Packed C-Array (4-bit Index)
+            </button>
+            <button
+              id="exportQoiBtn"
+              style="border-color: var(--neon-cyan); color: var(--neon-cyan)"
+            >
+              Download .QOI
+            </button>
+            <button
+              id="exportAvifBtn"
+              style="border-color: var(--neon-amber); color: var(--neon-amber)"
+            >
+              Download .AVIF
+            </button>
+          </div>
+          <textarea
+            id="cCodeOutput"
+            readonly
+            style="height: 220px; color: var(--neon-green)"
+            placeholder="Awaiting matrix generation execution..."
+          ></textarea>
+        </section>
+
+        <!-- MODULE 4: SPRITE PACKER -->
+        <section id="packer" class="module-packer">
+          <h2>_03_ Sprite Sheet Packer (MaxRects Bin)</h2>
+          <div class="toolbar">
+            <input type="file" id="spriteUpload" accept="image/png" multiple />
+            <div class="control-group">
+              <span style="font-size: 0.85rem; color: var(--text-muted)"
+                >Padding:</span
+              >
+              <input
+                type="number"
+                id="packPadding"
+                value="2"
+                style="width: 50px"
+              />
+            </div>
+            <button id="packBtn">Pack Atlas</button>
+          </div>
+
+          <div class="canvas-grid">
+            <div class="canvas-card">
+              <h3>Compiled Sprite Sheet</h3>
+              <div class="canvas-wrapper">
+                <canvas id="atlasCanvas"></canvas>
+              </div>
+            </div>
+            <div class="canvas-card">
+              <h3>Live Cycle Previewer</h3>
+              <div
+                style="
+                  display: flex;
+                  gap: 20px;
+                  align-items: center;
+                  background: var(--bg-input);
+                  padding: 15px;
+                  border-radius: 4px;
+                  min-height: 200px;
+                "
+              >
+                <div
+                  style="
+                    background: #000;
+                    width: 110px;
+                    height: 110px;
+                    border: 1px solid var(--border-color);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    border-radius: 4px;
+                  "
+                >
+                  <canvas id="previewCanvas" width="128" height="128"></canvas>
+                </div>
+                <div style="flex: 1">
+                  <span style="font-size: 0.85rem; color: var(--text-muted)"
+                    >Loop Playback FPS:
+                    <span id="fpsValue" style="color: var(--neon-magenta)"
+                      >12</span
+                    >
+                  </span>
+                  <input
+                    type="range"
+                    id="fpsSlider"
+                    min="1"
+                    max="60"
+                    value="12"
+                    style="width: 100%; margin-top: 10px"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top: 25px">
+            <div class="output-block">
+              <h3
+                style="
+                  font-size: 0.85rem;
+                  color: var(--text-muted);
+                  margin-bottom: 10px;
+                  text-transform: uppercase;
+                "
+              >
+                Atlas Coordinates Descriptor (JSON)
+              </h3>
+              <textarea
+                id="atlasJsonOutput"
+                readonly
+                placeholder="JSON metadata will appear here..."
+                style="height: 150px; color: var(--neon-cyan)"
+              ></textarea>
+            </div>
+
+            <div class="output-block" style="margin-top: 20px">
+              <h3
+                style="
+                  font-size: 0.85rem;
+                  color: var(--text-muted);
+                  margin-bottom: 10px;
+                  text-transform: uppercase;
+                "
+              >
+                Generated Garmin/Embedded C-Array Sprite Sheet & Offsets
+              </h3>
+              <textarea
+                id="atlasCodeOutput"
+                readonly
+                placeholder="C-Array code with frame offsets will appear here..."
+                style="
+                  font-family: monospace;
+                  color: var(--neon-cyan);
+                  background: #0d1117;
+                  border-color: #30363d;
+                  height: 200px;
+                "
+              ></textarea>
+            </div>
+          </div>
+        </section>
+
+        <!-- MODULE 3.5: TILEMAP GENERATOR -->
+        <section id="tilemap" class="module-packer" style="position: relative">
+          <h2>_03.5_ Tilemap & Tileset Optimizer</h2>
+          <div class="toolbar">
+            <div class="control-group">
+              <span style="font-size: 0.85rem; color: var(--text-muted)"
+                >Tile Size (px):</span
+              >
+              <select id="tileMapSize">
+                <option value="8">8 x 8</option>
+                <option value="16" selected>16 x 16</option>
+                <option value="32">32 x 32</option>
+              </select>
+            </div>
+            <button
+              id="generateTilemapBtn"
+              style="
+                border-color: var(--neon-magenta);
+                color: var(--neon-magenta);
+              "
+            >
+              Analyze & Deduplicate
+            </button>
+          </div>
+
+          <div class="canvas-grid">
+            <div class="canvas-card">
+              <h3>Optimized Tileset Buffer (Unique Tiles Only)</h3>
+              <div class="canvas-wrapper">
+                <canvas id="tilesetCanvas"></canvas>
+              </div>
+            </div>
+            <div>
+              <h3
+                style="
+                  font-size: 0.85rem;
+                  color: var(--text-muted);
+                  margin-bottom: 10px;
+                "
+              >
+                Tilemap Matrix Indexes (C-Array)
+              </h3>
+              <textarea
+                id="tilemapCodeOutput"
+                readonly
+                style="height: 220px; color: var(--neon-green)"
+                placeholder="Run analyzer to extract structural tile data map..."
+              ></textarea>
+            </div>
+          </div>
+        </section>
+
+        <!-- MODULE 5: FONT ENGINE -->
+        <section id="fonts" class="module-font">
+          <h2>_04_ Low-Res Font Grid Engine</h2>
+          <div class="toolbar">
+            <input type="file" id="fontUpload" accept=".ttf,.otf" />
+            <div class="control-group">
+              <span style="font-size: 0.85rem; color: var(--text-muted)"
+                >Grid Size (px):</span
+              >
+              <input
+                type="number"
+                id="fontSize"
+                value="8"
+                style="width: 60px"
+              />
+            </div>
+            <button id="generateFontBtn">Build Bitmap Font</button>
+          </div>
+          <textarea
+            id="fontCodeOutput"
+            readonly
+            style="height: 220px; color: var(--neon-amber)"
+            placeholder="Upload TrueType file vectors to initiate compiler..."
+          ></textarea>
+        </section>
+
+        <!-- MODULE 6: DEVOPS -->
+        <section id="devops">
+          <h2>_05_ DevOps Automated Pipeline</h2>
+          <div class="toolbar">
+            <button id="generatePipelineBtn">
+              Generate CI/CD Automation Workflow
+            </button>
+          </div>
+          <div class="canvas-grid">
+            <div>
+              <h3
+                style="
+                  font-size: 0.85rem;
+                  color: var(--text-muted);
+                  margin-bottom: 10px;
+                "
+              >
+                Node.js Script Context
+              </h3>
+              <textarea
+                id="nodeScriptOutput"
+                readonly
+                style="height: 250px; color: #f1fa8c"
+              ></textarea>
+            </div>
+            <div>
+              <h3
+                style="
+                  font-size: 0.85rem;
+                  color: var(--text-muted);
+                  margin-bottom: 10px;
+                "
+              >
+                GitHub Actions Configuration
+              </h3>
+              <textarea
+                id="githubActionOutput"
+                readonly
+                style="height: 250px; color: #bd93f9"
+              ></textarea>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- MAIN ENGINES ROUTER -->
+  </body>
+</html>
