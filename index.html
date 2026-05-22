@@ -85,6 +85,19 @@
         background: linear-gradient(180deg, #0a0d12 0%, #0e131b 100%);
       }
 
+      .counter-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 10px;
+        opacity: 0.8;
+        transition: opacity 0.2s ease;
+      }
+
+      .counter-container:hover {
+        opacity: 1;
+      }
+
       /* --- HEADER & STATUS BAR --- */
       header {
         padding: 20px 40px;
@@ -785,5 +798,11 @@
     </div>
 
     <!-- MAIN ENGINES ROUTER -->
+    <div class="counter-container" style="text-align: center; margin: 20px 0">
+      <img
+        src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fsapianyi.github.io%2FPixelForge&count_bg=%23ff007f&title_bg=%23161b22&icon=&icon_color=%23e7e7e7&title=VISITS&edge_flat=false"
+        alt="Visits Counter"
+      />
+    </div>
   </body>
 </html>
